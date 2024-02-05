@@ -43,7 +43,7 @@ body
 
 .outerhead
 {
-    background-color: grey;
+    background-color: teal;
     height: 60px;
     display: flex;
 }
@@ -102,7 +102,7 @@ body
 
 .title
 {
-  font-size: 18px;
+  font-size: 20px;
   margin-bottom: 50px;
 }
 
@@ -154,7 +154,6 @@ body
 .options 
 {
   border: 1px solid black;
- 
   border-radius: 50px;
   padding: 7px 21px;
   font-family: 'Roboto', sans-serif;
@@ -167,4 +166,55 @@ body
   border: white;
   color: white;
   background-color: salmon;
+}
+
+/* MAINPAGE PAGE STYLING */
+
+.searchcon
+{
+  margin: 40px 0px;
+  font-family: 'Roboto', sans-serif;
+  width: 350px;
+  
+}
+
+.searchcon form
+{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.searchcon button
+{
+  cursor: pointer;
+  padding: 5px 10px;
+  border: 1px solid black;
+}
+
+.searchcon input
+{
+  border: 1px solid black;
+  padding: 5px 5px;
+}
+
+.abilitybox
+{
+  display: flex;
+  flex-direction: column;
+}
+
+.abilities
+{
+  width: fit-content;
+  border: 1px solid black;
+  border-radius: 50px;
+  padding: 7px 21px;
+  font-family: 'Roboto', sans-serif;
+  margin-bottom: 20px;
+}
+
+.all-users
+{
+  width: 100%;
 }

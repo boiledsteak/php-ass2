@@ -18,6 +18,145 @@ $username = "root";
 $password = "";      
 $dbname = "php-ass2";
 
+function normalComponent()
+{
+    echo'
+    this is normal
+    ';
+}
+
+function adminComponent()
+{
+    // Check if the user is logged in
+    if (isset($_SESSION['user'])) 
+    {
+        // Get the name of the currently logged-in user
+        $currentUserName = $_SESSION['user']['name'];
+        
+        echo '<div class="canvas"><div class="mainpagefn">';
+        echo '<div class="title">Welcome, ' . $currentUserName . '!</div>';
+
+        // Search form
+        echo '<div class="searchcon"><form method="post" action="/">';
+        echo '<label for="searchUser">Search for user:</label>';
+        echo '<div><input type="text" id="searchUser" name="searchUser">';
+        echo '<button type="submit">Go</button></div>';
+        echo '</form></div>';
+
+        // Display search results or all users if form not submitted
+        if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['searchUser'])) 
+        {
+            $searchUserName = strtolower(htmlspecialchars($_POST['searchUser']));
+            // If search input is empty, display all users
+            if (empty($searchUserName)) 
+            {
+                displayAllUsers();
+            } 
+            else 
+            {
+                searchForUser($searchUserName);
+            }
+        } 
+        else 
+        {
+            displayAllUsers();
+        }
+
+        echo '</div></div>';
+    } 
+    else 
+    {
+        echo '<p>No user logged in.</p>';
+    }
+}
+
+function displayAllUsers()
+{
+    global $servername, $username, $password, $dbname;
+
+    try 
+    {
+        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $stmt = $conn->query("SELECT * FROM usertable");
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($users) 
+        {
+            echo '<div class="abilitybox"><div class="abilities" >All users</div>';
+            echo '<table border="1">';
+            echo '<tr><th>ID</th><th>Name</th><th>Role</th><th>Surname</th><th>Email</th><th>Phone</th></tr>';
+            
+            foreach ($users as $user) 
+            {
+                echo '<tr>';
+                echo '<td>' . $user['id'] . '</td>';
+                echo '<td>' . $user['name'] . '</td>';
+                echo '<td>' . $user['role'] . '</td>';
+                echo '<td>' . $user['surname'] . '</td>';
+                echo '<td>' . $user['email'] . '</td>';
+                echo '<td>' . $user['phone'] . '</td>';
+                echo '</tr>';
+            }
+            
+            echo '</table></div>';
+        } 
+        else 
+        {
+            echo '<p>No users found.</p>';
+        }
+    } 
+    catch (PDOException $e) 
+    {
+        echo "Connection failed: " . $e->getMessage();
+    }
+}
+
+function searchForUser($searchUserName)
+{
+    global $servername, $username, $password, $dbname;
+
+    try 
+    {
+        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // SQL statement to search for a specific user
+        $sql = "SELECT * FROM usertable WHERE name = :searchUserName";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindParam(':searchUserName', $searchUserName);
+        $stmt->execute();
+
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user) 
+        {
+            echo '<div class="abilitybox"><div class="abilities" >'.$user['name'].'</div>';
+            echo '<table border="1">';
+            echo '<tr><th>ID</th><th>Name</th><th>Role</th><th>Surname</th><th>Email</th><th>Phone</th></tr>';
+            echo '<tr>';
+            echo '<td>' . $user['id'] . '</td>';
+            echo '<td>' . $user['name'] . '</td>';
+            echo '<td>' . $user['role'] . '</td>';
+            echo '<td>' . $user['surname'] . '</td>';
+            echo '<td>' . $user['email'] . '</td>';
+            echo '<td>' . $user['phone'] . '</td>';
+            echo '</tr>';
+            echo '</table></div>';
+        } 
+        else 
+        {
+            echo '<p>No user found with the name ' . $searchUserName . '.</p>';
+        }
+    } 
+    catch (PDOException $e) 
+    {
+        echo "Connection failed: " . $e->getMessage();
+    }
+}
+
+
 function loginComponent()
 {
     echo '
@@ -102,18 +241,34 @@ function headerComponent()
             <a class="thelogo" href="/">
                 Easy Parking
             </a>
-            <div class="menoptions">
+            <div class="menoptions">';
+
+    if (isset($_SESSION['user'])) 
+    {
+        // If user is logged in, display Logout button
+        echo '
+            <div class="menoption">
+                <a href="/logout">Logout</a>
+            </div>';
+    } 
+    else 
+    {
+        // If user is not logged in, display Login button
+        echo '
+            <div class="menoption">
+                <a href="/login">Login</a>
+            </div>';
+    }
+
+    echo '
                 <div class="menoption">
                     <a href="/register">Register</a>
                 </div>
-                <div class="menoption">
-                    <a href="/login">Login</a>
-                </div>
             </div>
         </div>
-    </div>
-    ';
+    </div>';
 }
+
 
 function btmComponent()
 {
@@ -128,20 +283,33 @@ switch ($request) {
     case '/':
     {
         // Check if the user is logged in
-        if (!isset($_SESSION['username'])) 
+        if (isset($_SESSION['user'])) 
+        {
+            // Get the user's role from the session
+            $userRole = $_SESSION['user']['role'];
+            require __DIR__ . $viewDir . 'mainpage.php';
+            headerComponent();
+            // Call the appropriate component based on the user role
+            if ($userRole === 'admin') 
+            {
+                adminComponent();
+            } 
+            elseif ($userRole === 'normal') 
+            {
+                normalComponent();
+            }
+        }
+        else 
         {
             // Redirect to /login if not logged in
             header("Location: /login");
             exit;
         }
-        require __DIR__ . $viewDir . 'mainpage.php';
-        headerComponent();
-        // Display the username
-        echo '<div class="username">Welcome, ' . $_SESSION['username'] . '!</div>';
+    
         btmComponent();      
         break;
     }
-
+        
     case '/css':
     {
         header('Content-Type: text/css');
@@ -228,18 +396,19 @@ switch ($request) {
                 $username = strtolower(htmlspecialchars($_POST['fname']));
     
                 // SQL statement to check if the username exists
-                $sql = "SELECT COUNT(*) FROM usertable WHERE name = :username";
+                $sql = "SELECT * FROM usertable WHERE name = :username";
                 $stmt = $conn->prepare($sql);
                 $stmt->bindParam(':username', $username);
                 $stmt->execute();
     
                 // Fetch the result
-                $count = $stmt->fetchColumn();
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
     
-                if ($count > 0) 
+                if ($user) 
                 {
-                    $_SESSION['username'] = $username;
-                    // Redirect to / if the username exists
+                    // Store all user attributes in the session
+                    $_SESSION['user'] = $user;
+                    // Redirect to / 
                     header("Location: /");
                     exit;
                 } 
@@ -258,6 +427,22 @@ switch ($request) {
         }
         break;
     }
+    
+
+    case '/logout':
+    {
+        // Check if the user is logged in
+        if (isset($_SESSION['user'])) 
+        {
+            // Unset the session variable
+            unset($_SESSION['user']);
+        }
+        
+        // Redirect to the home page or any desired destination
+        header("Location: /");
+        exit;
+    }
+        
         
     default:
     {
