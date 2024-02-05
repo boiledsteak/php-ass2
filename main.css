@@ -170,6 +170,23 @@ body
 
 /* MAINPAGE PAGE STYLING */
 
+.plocform
+{
+  display: flex;
+  flex-direction: column;
+}
+
+.form-row
+{
+  margin: 10px 0px;
+}
+
+.plocform input
+{
+  border: unset;
+  border-bottom: 1px solid black;
+}
+
 .searchcon
 {
   margin: 40px 0px;
@@ -185,11 +202,18 @@ body
   align-items: center;
 }
 
-.searchcon button
+.nicebtn
 {
   cursor: pointer;
   padding: 5px 10px;
   border: 1px solid black;
+}
+
+.nicebtn:hover
+{
+  border: white 1px solid;
+  color: white;
+  background-color: salmon;
 }
 
 .searchcon input
@@ -202,6 +226,10 @@ body
 {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  margin-bottom: 60px;
+  border: 1px dotted black;
+  padding: 15px;
 }
 
 .abilities

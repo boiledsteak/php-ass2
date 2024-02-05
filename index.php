@@ -40,7 +40,7 @@ function adminComponent()
         echo '<div class="searchcon"><form method="post" action="/">';
         echo '<label for="searchUser">Search for user:</label>';
         echo '<div><input type="text" id="searchUser" name="searchUser">';
-        echo '<button type="submit">Go</button></div>';
+        echo '<button class="nicebtn" type="submit">Go</button></div>';
         echo '</form></div>';
 
         // Display search results or all users if form not submitted
@@ -62,6 +62,44 @@ function adminComponent()
             displayAllUsers();
         }
 
+        
+
+        echo '
+            <div class="abilitybox">
+                <div class="abilities">
+                    Parking Locations
+                </div>
+                <form class="plocform" method="post" action="/insertparkingloc">
+                <div class="form-row">
+                    <label for="locName">Location Name:</label>
+                    <input type="text" id="locName" name="locName" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="locDescription">Description:</label>
+                    <input type="text" id="locDescription" name="locDescription">
+                </div>
+
+                <div class="form-row">
+                    <label for="locCapacity">Capacity:</label>
+                    <input type="number" id="locCapacity" name="locCapacity" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="locCostPerHour">Cost Per Hour:</label>
+                    <input type="text" id="locCostPerHour" name="locCostPerHour">
+                </div>
+
+                <div class="form-row">
+                    <label for="locCostPerHourLateCheckOut">Cost Per Hour Late Check Out:</label>
+                    <input type="text" id="locCostPerHourLateCheckOut" name="locCostPerHourLateCheckOut">
+                </div>
+
+                    <button class="nicebtn" type="submit">Add Parking Location</button>
+                </form>
+
+            </div>
+        ';
         echo '</div></div>';
     } 
     else 
@@ -309,6 +347,50 @@ switch ($request) {
         btmComponent();      
         break;
     }
+
+    case '/insertparkingloc':
+    {
+        // Create a connection to the database
+        try 
+        {
+            $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+            // Set the PDO error mode to exception
+            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            // Check if the form is submitted
+            if ($_SERVER["REQUEST_METHOD"] == "POST") 
+            {
+                // Get data from the form
+                $locName = strtolower(htmlspecialchars($_POST['locName']));
+                $locDescription = htmlspecialchars($_POST['locDescription']);
+                $locCapacity = intval($_POST['locCapacity']);
+                $locCostPerHour = isset($_POST['locCostPerHour']) ? floatval($_POST['locCostPerHour']) : null;
+                $locCostPerHourLateCheckOut = isset($_POST['locCostPerHourLateCheckOut']) ? floatval($_POST['locCostPerHourLateCheckOut']) : null;
+
+                // SQL statement to insert data into the parkinglocs table
+                $sql = "INSERT INTO parkinglocs (Location, Description, Capacity, CostPerHour, CostPerHourLateCheckOut) VALUES (:locName, :locDescription, :locCapacity, :locCostPerHour, :locCostPerHourLateCheckOut)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bindParam(':locName', $locName);
+                $stmt->bindParam(':locDescription', $locDescription);
+                $stmt->bindParam(':locCapacity', $locCapacity);
+                $stmt->bindParam(':locCostPerHour', $locCostPerHour);
+                $stmt->bindParam(':locCostPerHourLateCheckOut', $locCostPerHourLateCheckOut);
+
+                // Execute the statement
+                $stmt->execute();
+
+                // Redirect back to admin component or any desired destination
+                header('Location: /');
+            }
+        } 
+        catch (PDOException $e) 
+        {
+            // Handle database connection error
+            echo "Connection failed: " . $e->getMessage();
+        }
+
+        break;
+    }
         
     case '/css':
     {
@@ -428,7 +510,6 @@ switch ($request) {
         break;
     }
     
-
     case '/logout':
     {
         // Check if the user is logged in
