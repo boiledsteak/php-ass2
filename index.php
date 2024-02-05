@@ -18,6 +18,31 @@ $username = "root";
 $password = "";      
 $dbname = "php-ass2";
 
+function loginComponent()
+{
+    echo '
+        <div class="canvas">
+            <div class="mainpagefn">
+                <div class="title">
+                    Login with your username!
+                </div>
+                <form class="nameform" method="post" action="/loginuser">
+                    <div class="namebox">
+                        <div class="thename">
+                            Username: 
+                        </div>
+                        <input type="text" id="fname" name="fname" required>
+                    </div>
+                    <div class="optionsbox">
+                        <button type="submit" class="options">
+                        Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    ';
+}
 
 function registerComponent()
 {
@@ -102,9 +127,17 @@ switch ($request) {
 
     case '/':
     {
+        // Check if the user is logged in
+        if (!isset($_SESSION['username'])) 
+        {
+            // Redirect to /login if not logged in
+            header("Location: /login");
+            exit;
+        }
         require __DIR__ . $viewDir . 'mainpage.php';
         headerComponent();
-        
+        // Display the username
+        echo '<div class="username">Welcome, ' . $_SESSION['username'] . '!</div>';
         btmComponent();      
         break;
     }
@@ -157,7 +190,8 @@ switch ($request) {
                 // Execute the statement
                 $stmt->execute();
 
-                echo "New record created successfully";
+                // Redirect back
+                header('Location: /');
             }
         } 
         catch (PDOException $e) 
@@ -169,6 +203,62 @@ switch ($request) {
         break;
     }
 
+    case '/login':
+    {
+        require __DIR__ . $viewDir . 'mainpage.php';
+        headerComponent();
+        loginComponent();
+        btmComponent();      
+        break;
+    }
+
+    case '/loginuser':
+    {
+        // Create a connection to the database
+        try 
+        {
+            $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+            // Set the PDO error mode to exception
+            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+            // Check if the form is submitted
+            if ($_SERVER["REQUEST_METHOD"] == "POST") 
+            {
+                // Get data from the form
+                $username = strtolower(htmlspecialchars($_POST['fname']));
+    
+                // SQL statement to check if the username exists
+                $sql = "SELECT COUNT(*) FROM usertable WHERE name = :username";
+                $stmt = $conn->prepare($sql);
+                $stmt->bindParam(':username', $username);
+                $stmt->execute();
+    
+                // Fetch the result
+                $count = $stmt->fetchColumn();
+    
+                if ($count > 0) 
+                {
+                    $_SESSION['username'] = $username;
+                    // Redirect to / if the username exists
+                    header("Location: /");
+                    exit;
+                } 
+                else 
+                {
+                    // Redirect back to /login if the username doesn't exist
+                    header("Location: /login");
+                    exit;
+                }
+            }
+        } 
+        catch (PDOException $e) 
+        {
+            // Handle database connection error
+            echo "Connection failed: " . $e->getMessage();
+        }
+        break;
+    }
+        
     default:
     {
         http_response_code(404);
