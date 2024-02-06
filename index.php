@@ -22,6 +22,7 @@ function normalComponent()
 {
     echo'
     this is normal
+    testomg
     ';
 }
 
