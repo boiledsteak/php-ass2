@@ -28,7 +28,7 @@ function normalComponent()
         <div class="canvas"><div class="mainpagefn">
             <div class="title">Welcome, ' . $currentUserName . '!</div>
                 <div class="adminpage">
-                    <a class="abilities" href="/userploc">Parking Locations</a>
+                    <a class="abilities" href="/userploc">Parking locations</a>
                     <a class="abilities" href="/usercheck">Check in/out</a>
                 </div>
     
@@ -600,6 +600,120 @@ function searchCheckedInLocation($searchName)
         else 
         {
             echo '<p>No checked-in locations found with the name ' . $searchName . '.</p>';
+        }
+    } 
+    catch (PDOException $e) 
+    {
+        echo "Connection failed: " . $e->getMessage();
+    }
+}
+
+function searchCheckedInLocationByName($searchName)
+{
+    global $servername, $username, $password, $dbname;
+
+    try 
+    {
+        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // SQL statement to search for a specific checked-in location by name
+        $sql = "SELECT parkingrecords.RecordID, parkinglocs.Location, parkinglocs.Description, usertable.name AS UserName, parkingrecords.CheckInTime, parkingrecords.CheckOutTime, parkingrecords.RealCheckOutTime
+                FROM parkingrecords 
+                INNER JOIN parkinglocs ON parkingrecords.ParkingID = parkinglocs.ParkingID 
+                LEFT JOIN usertable ON parkingrecords.UserID = usertable.id
+                WHERE usertable.name LIKE :searchName AND parkingrecords.RealCheckOutTime IS NOT NULL";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindValue(':searchName', '%' . $searchName . '%');
+        $stmt->execute();
+
+        $checkedInLocations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($checkedInLocations) 
+        {
+            if (empty($searchName)) {
+                echo '<div class="abilitybox"><div class="abilities">All Checked-In Locations</div>';
+            } else {
+                echo '<div class="abilitybox"><div class="abilities">Checked-Out by ' . htmlspecialchars($searchName) . '</div>';
+            }
+            echo '<table border="1">';
+            echo '<tr><th>Record ID</th><th>Location</th><th>Description</th><th>User Name</th><th>Check-In Time</th><th>Check Out Time</th><th>Real Check Out Time</th></tr>';
+            
+            foreach ($checkedInLocations as $location) 
+            {
+                echo '<tr>';
+                echo '<td>' . $location['RecordID'] . '</td>';
+                echo '<td>' . $location['Location'] . '</td>';
+                echo '<td>' . $location['Description'] . '</td>';
+                echo '<td>' . $location['UserName'] . '</td>';
+                echo '<td>' . $location['CheckInTime'] . '</td>';
+                echo '<td>' . $location['CheckOutTime'] . '</td>';
+                echo '<td>' . $location['RealCheckOutTime'] . '</td>';
+                echo '</tr>';
+            }
+            
+            echo '</table></div>';
+        } 
+        else 
+        {
+            echo '<p>No checked-in locations found by the user ' . $searchName . '.</p>';
+        }
+    } 
+    catch (PDOException $e) 
+    {
+        echo "Connection failed: " . $e->getMessage();
+    }
+}
+
+function activeparkingsbyname($searchName)
+{
+    global $servername, $username, $password, $dbname;
+
+    try 
+    {
+        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // SQL statement to search for a specific checked-in location by name
+        $sql = "SELECT parkingrecords.RecordID, parkinglocs.Location, parkinglocs.Description, usertable.name AS UserName, parkingrecords.CheckInTime, parkingrecords.CheckOutTime
+                FROM parkingrecords 
+                INNER JOIN parkinglocs ON parkingrecords.ParkingID = parkinglocs.ParkingID 
+                LEFT JOIN usertable ON parkingrecords.UserID = usertable.id
+                WHERE usertable.name LIKE :searchName AND parkingrecords.RealCheckOutTime IS NULL";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindValue(':searchName', '%' . $searchName . '%');
+        $stmt->execute();
+
+        $checkedInLocations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($checkedInLocations) 
+        {
+            if (empty($searchName)) {
+                echo '<div class="abilitybox"><div class="abilities">All Checked-In Locations</div>';
+            } else {
+                echo '<div class="abilitybox"><div class="abilities">Checked-In by ' . htmlspecialchars($searchName) . '</div>';
+            }
+            echo '<table border="1">';
+            echo '<tr><th>Record ID</th><th>Location</th><th>Description</th><th>User Name</th><th>Check-In Time</th><th>Check Out Time</th><th></th></tr>';
+            
+            foreach ($checkedInLocations as $location) 
+            {
+                echo '<tr>';
+                echo '<td>' . $location['RecordID'] . '</td>';
+                echo '<td>' . $location['Location'] . '</td>';
+                echo '<td>' . $location['Description'] . '</td>';
+                echo '<td>' . $location['UserName'] . '</td>';
+                echo '<td>' . $location['CheckInTime'] . '</td>';
+                echo '<td>' . $location['CheckOutTime'] . '</td>';
+                echo '<td><form method="post" action="/checkout"><input type="hidden" name="recordID" value="' . $location['RecordID'] . '"><button class="nicebtn" type="submit">Checkout</button></form></td>';
+                echo '</tr>';
+            }
+            
+            echo '</table></div>';
+        } 
+        else 
+        {
+            echo '<p>No checked-in locations found by the user ' . $searchName . '.</p>';
         }
     } 
     catch (PDOException $e) 
@@ -1267,8 +1381,14 @@ switch ($request) {
                                 <a class="abilities" id="adminone" href="/usercheck">Check in</a>
                                 <a class="abilities" href="/history">History</a>
                                 <a class="abilities" href="/current">Current parkings</a>
+                                <a class="abilities"  href="/payment">Check out</a>
                             </div>
                 ';
+                
+                echo '
+                        </div>
+                    </div>            
+            ';
             break;
         }
 
@@ -1294,8 +1414,14 @@ switch ($request) {
                                 <a class="abilities"  href="/usercheck">Check in</a>
                                 <a class="abilities" id="adminone" href="/history">History</a>
                                 <a class="abilities" href="/current">Current parkings</a>
+                                <a class="abilities"  href="/payment">Check out</a>
                             </div>
                 ';
+                searchCheckedInLocationByName($currentUserName);
+                echo '
+                        </div>
+                    </div>            
+            ';
             break;
         }
 
@@ -1321,8 +1447,15 @@ switch ($request) {
                                     <a class="abilities"  href="/usercheck">Check in</a>
                                     <a class="abilities"  href="/history">History</a>
                                     <a class="abilities" id="adminone" href="/current">Current parkings</a>
+                                    <a class="abilities"  href="/payment">Check out</a>
                                 </div>
                     ';
+
+                    activeparkingsbyname($currentUserName);
+                    echo '
+                        </div>
+                    </div>            
+            ';
                 break;
             }
         
@@ -1369,7 +1502,39 @@ switch ($request) {
         break;
     }
         
-        
+    case '/payment':
+    {
+        require __DIR__ . $viewDir . 'mainpage.php';
+            headerComponent();
+            // Get the name of the currently logged-in user
+            $currentUserName = $_SESSION['user']->getName();
+            echo '
+                <div class="canvas">
+                    <div class="mainpagefn">
+                        <div class="title">
+                            Welcome, ' . $currentUserName . '!
+                        </div>
+                        <div class="adminpage">
+                            <a class="abilities" href="/userploc">Parking locations</a>
+                            <a class="abilities" id="adminone" href="/usercheck">Check in/out</a>
+                        </div>
+            ';
+            echo '
+                            <div class="adminpage">
+                                <a class="abilities"  href="/usercheck">Check in</a>
+                                <a class="abilities"  href="/history">History</a>
+                                <a class="abilities"  href="/current">Current parkings</a>
+                                <a class="abilities" id="adminone" href="/payment">Check out</a>
+                            </div>
+                ';
+
+                
+                echo '
+                    </div>
+                </div>            
+            ';
+        break;
+    }
 
     case '/checkout':
     {
