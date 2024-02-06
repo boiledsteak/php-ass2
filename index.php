@@ -39,6 +39,7 @@ function adminComponent()
                     <div class="adminpage">
                         <a class="abilities" href="/users">Users</a>
                         <a class="abilities" href="/ploc">Parking locations</a>
+                        <a class="abilities" href="/check">Check in/out</a>
                     </div>
         
 
@@ -189,6 +190,46 @@ function displayAllPlocs()
     }
 }
 
+function printinsertploc()
+{
+    echo '
+            <div class="abilitybox">
+                <div class="abilities">
+                    Add Parking Location
+                </div>
+                <form class="plocform" method="post" action="/insertparkingloc">
+                <div class="form-row">
+                    <label for="locName">Location Name:</label>
+                    <input type="text" id="locName" name="locName" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="locDescription">Description:</label>
+                    <input type="text" id="locDescription" name="locDescription">
+                </div>
+
+                <div class="form-row">
+                    <label for="locCapacity">Capacity:</label>
+                    <input type="number" id="locCapacity" name="locCapacity" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="locCostPerHour">Cost Per Hour:</label>
+                    <input type="text" id="locCostPerHour" name="locCostPerHour">
+                </div>
+
+                <div class="form-row">
+                    <label for="locCostPerHourLateCheckOut">Cost Per Hour Late Check Out:</label>
+                    <input type="text" id="locCostPerHourLateCheckOut" name="locCostPerHourLateCheckOut">
+                </div>
+
+                    <button class="nicebtn" type="submit">Add Parking Location</button>
+                </form>
+
+            </div>
+        ';
+}
+
 function searchploc($searchLocationName)
 {
     global $servername, $username, $password, $dbname;
@@ -231,6 +272,46 @@ function searchploc($searchLocationName)
         echo "Connection failed: " . $e->getMessage();
     }
 }
+
+function printCheckIn()
+{
+    global $servername, $username, $password, $dbname;
+
+    try {
+        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $stmt = $conn->query("SELECT parkingrecords.RecordID, parkingrecords.ParkingID, parkingrecords.UserID, parkingrecords.CheckInTime, parkingrecords.CheckOutTime
+                              FROM parkingrecords
+                              LEFT JOIN parkinglocs ON parkingrecords.ParkingID = parkinglocs.ParkingID
+                              WHERE parkingrecords.RealCheckOutTime IS NULL");
+        $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($records) {
+            echo '<div class="checkin-table">';
+            echo '<table border="1">';
+            echo '<tr><th>Record ID</th><th>Parking ID</th><th>User ID</th><th>Check In Time</th><th>Check Out Time</th><th>Actions</th></tr>';
+            
+            foreach ($records as $record) {
+                echo '<tr>';
+                echo '<td>' . $record['RecordID'] . '</td>';
+                echo '<td>' . $record['ParkingID'] . '</td>';
+                echo '<td>' . $record['UserID'] . '</td>';
+                echo '<td>' . $record['CheckInTime'] . '</td>';
+                echo '<td>' . $record['CheckOutTime'] . '</td>';
+                echo '<td><form method="post" action="/checkout"><input type="hidden" name="recordID" value="' . $record['RecordID'] . '"><button class="nicebtn" type="submit">Checkout</button></form></td>';
+                echo '</tr>';
+            }
+            
+            echo '</table></div>';
+        } else {
+            echo '<p>No checked-in users found.</p>';
+        }
+    } catch (PDOException $e) {
+        echo "Connection failed: " . $e->getMessage();
+    }
+}
+
 
 
 function loginComponent()
@@ -402,6 +483,7 @@ switch ($request) {
                     <div class="adminpage">
                         <a class="abilities" id="adminone" href="/users">Users</a>
                         <a class="abilities" href="/ploc">Parking locations</a>
+                        <a class="abilities" href="/check">Check in/out</a>
                     </div>
         ';
         // Search user form
@@ -442,7 +524,7 @@ switch ($request) {
         break;
     }
 
-    case '/ploc': //no validation
+    case '/ploc':
     {
         // Check if the user is logged in
         if (isset($_SESSION['user']))
@@ -460,6 +542,7 @@ switch ($request) {
                         <div class="adminpage">
                             <a class="abilities" href="/users">Users</a>
                             <a class="abilities" id="adminone" href="/ploc">Parking locations</a>
+                            <a class="abilities" href="/check">Check in/out</a>
                         </div>
             ';
             // Search user form
@@ -492,6 +575,7 @@ switch ($request) {
             {
                 displayAllPlocs();
             }
+            printinsertploc();
             echo '
                         </div>
                     </div>            
@@ -538,7 +622,7 @@ switch ($request) {
                 $stmt->execute();
 
                 // Redirect back to admin component or any desired destination
-                header('Location: /newploc');
+                header('Location: /ploc');
             }
         } 
         catch (PDOException $e) 
@@ -549,6 +633,144 @@ switch ($request) {
 
         break;
     }
+
+
+    case '/check':
+    {
+        // Check if the user is logged in
+        if (isset($_SESSION['user'])) {
+            require __DIR__ . $viewDir . 'mainpage.php';
+            headerComponent();
+            // Get the name of the currently logged-in user
+            $currentUserName = $_SESSION['user']['name'];
+            
+            echo '
+                <div class="canvas">
+                    <div class="mainpagefn">
+                        <div class="title">
+                            Welcome, ' . $currentUserName . '!
+                        </div>
+                        <div class="adminpage">
+                            <a class="abilities" href="/users">Users</a>
+                            <a class="abilities" href="/ploc">Parking locations</a>
+                            <a class="abilities" id="adminone" href="/check">Check in/out</a>
+                        </div>
+            ';
+    
+            // Form to prompt for check-in and checkout time
+            echo '
+                <div class="checkin-form">
+                    <form method="post" action="/checkin">
+                        <label for="parkingID">Parking ID:</label>
+                        <input type="text" id="parkingID" name="parkingID" required>
+                        <label for="userID">User ID:</label>
+                        <input type="text" id="userID" name="userID" required>
+                        <label for="checkoutTime">Checkout Time:</label>
+                        <input type="datetime-local" id="checkoutTime" name="checkoutTime" required>
+                        <button class="nicebtn" type="submit">Check In</button>
+                    </form>
+                </div>
+            ';
+    
+            // Print the check-in table
+            printCheckIn();
+        } else {
+            // Redirect to /login if not logged in
+            header("Location: /login");
+            exit;
+        }
+        break;
+    }
+        
+
+    case '/checkin':
+    {
+        // Create a connection to the database
+        try {
+            $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+            // Set the PDO error mode to exception
+            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+            // Check if the form is submitted
+            if ($_SERVER["REQUEST_METHOD"] == "POST") {
+                // Get data from the form
+                $parkingID = $_POST['parkingID'];
+                $userID = $_POST['userID'];
+                $checkoutTime = $_POST['checkoutTime'];
+    
+                // Prepare the SQL statement to insert data into the parkingrecords table
+                $sql = "INSERT INTO parkingrecords (ParkingID, UserID, CheckInTime, CheckOutTime) VALUES (:parkingID, :userID, CURRENT_TIMESTAMP, :checkoutTime)";
+                $stmt = $conn->prepare($sql);
+                $stmt->bindParam(':parkingID', $parkingID);
+                $stmt->bindParam(':userID', $userID);
+                $stmt->bindParam(':checkoutTime', $checkoutTime);
+    
+                // Execute the statement
+                $stmt->execute();
+    
+                // Update the capacity of the corresponding parking location
+                $updateSql = "UPDATE parkinglocs SET Capacity = Capacity - 1 WHERE ParkingID = :parkingID";
+                $updateStmt = $conn->prepare($updateSql);
+                $updateStmt->bindParam(':parkingID', $parkingID);
+                $updateStmt->execute();
+    
+                // Redirect back to /check or any desired destination
+                header('Location: /check');
+            }
+        } catch (PDOException $e) {
+            // Handle database connection error
+            echo "Connection failed: " . $e->getMessage();
+        }
+    
+        break;
+    }
+        
+        
+
+    case '/checkout':
+    {
+        // Create a connection to the database
+        try {
+            $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+            // Set the PDO error mode to exception
+            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+            // Check if the form is submitted
+            if ($_SERVER["REQUEST_METHOD"] == "POST") {
+                // Get data from the form
+                $recordID = $_POST['recordID'];
+    
+                // Prepare the SQL statement to update the RealCheckOutTime column
+                $updateSql = "UPDATE parkingrecords SET RealCheckOutTime = CURRENT_TIMESTAMP WHERE RecordID = :recordID";
+                $stmt = $conn->prepare($updateSql);
+                $stmt->bindParam(':recordID', $recordID);
+                $stmt->execute();
+    
+                // Retrieve the parking ID for the corresponding record
+                $sql = "SELECT ParkingID FROM parkingrecords WHERE RecordID = :recordID";
+                $stmt = $conn->prepare($sql);
+                $stmt->bindParam(':recordID', $recordID);
+                $stmt->execute();
+                $parkingID = $stmt->fetchColumn();
+    
+                // Update the capacity of the corresponding parking location
+                $updateSql = "UPDATE parkinglocs SET Capacity = Capacity + 1 WHERE ParkingID = :parkingID";
+                $updateStmt = $conn->prepare($updateSql);
+                $updateStmt->bindParam(':parkingID', $parkingID);
+                $updateStmt->execute();
+    
+                // Redirect back to /check or any desired destination
+                header('Location: /check');
+            }
+        } catch (PDOException $e) {
+            // Handle database connection error
+            echo "Connection failed: " . $e->getMessage();
+        }
+    
+        break;
+    }
+                
+        
         
     case '/css':
     {
