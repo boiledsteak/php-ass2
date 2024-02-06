@@ -11,6 +11,12 @@
     
 }
 
+.btm
+{
+  width: 100%;
+  height: 60px;
+}
+
 h1
 {
     font-family: 'Roboto', sans-serif;
@@ -191,7 +197,7 @@ body
 {
   margin: 40px 0px;
   font-family: 'Roboto', sans-serif;
-  width: 430px;
+  width: 460px;
   
 }
 
@@ -227,7 +233,7 @@ body
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin-bottom: 60px;
+  margin-bottom: 40px;
   border: 1px dotted black;
   padding: 15px;
 }
@@ -255,4 +261,37 @@ body
 #adminone
 {
   background-color: tan;
+}
+
+/* check in/out page */
+
+.checkin-form
+{
+  display: flex;
+  flex-direction: column;
+  border: 1px dotted black;
+  padding: 20px 60px;
+}
+
+.checkin-form button
+{
+  margin-top: 30px;
+}
+
+.checkin-form input
+{
+  border: unset;
+  border: 1px solid black;
+}
+
+.checkin-form div
+{
+  display: flex;
+  justify-content: space-between;
+  margin: 10px;
+}
+
+.checkform
+{
+  width: 100%;
 }
