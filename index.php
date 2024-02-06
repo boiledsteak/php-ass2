@@ -1,5 +1,4 @@
 <!-- no need password -->
-<!-- minimum do check in check out -->
 <!-- due 19 feb -->
 <!-- extra features no extra marks -->
 <!-- no delete feature -->
@@ -34,60 +33,19 @@ function adminComponent()
         // Get the name of the currently logged-in user
         $currentUserName = $_SESSION['user']['name'];
         
-        echo '<div class="canvas"><div class="mainpagefn">';
-        echo '<div class="title">Welcome, ' . $currentUserName . '!</div>';
+        echo '
+            <div class="canvas"><div class="mainpagefn">
+                <div class="title">Welcome, ' . $currentUserName . '!</div>
+                    <div class="adminpage">
+                        <a class="abilities" href="/users">Users</a>
+                        <a class="abilities" href="/plocs">Parking locations</a>
+                    </div>
+        
 
-        // Search user form
-        echo '<div class="searchcon"><form method="post" action="/">';
-        echo '<label for="searchUser">Search for user:</label>';
-        echo '<div><input type="text" id="searchUser" name="searchUser">';
-        echo '<button class="nicebtn" type="submit">Go</button></div>';
-        echo '</form></div>';
-
-        // Display search results or all users if form not submitted
-        if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['searchUser'])) 
-        {
-            $searchUserName = strtolower(htmlspecialchars($_POST['searchUser']));
-            // If search input is empty, display all users
-            if (empty($searchUserName)) 
-            {
-                displayAllUsers();
-            } 
-            else 
-            {
-                searchForUser($searchUserName);
-            }
-        } 
-        else 
-        {
-            displayAllUsers();
-        }
-        insertPloc();
-        // Search form
-        echo '<div class="searchcon"><form method="post" action="/">';
-        echo '<label for="searchPloc">Search for location:</label>';
-        echo '<div><input type="text" id="searchPloc" name="searchPloc">';
-        echo '<button class="nicebtn" type="submit">Go</button></div>';
-        echo '</form></div>';
-        // Display search results or all parking locations if form not submitted
-        if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['searchPloc'])) 
-        {
-            $searchLocationName = strtolower(htmlspecialchars($_POST['searchPloc']));
-            // If search input is empty, display all parking locations
-            if (empty($searchLocationName)) 
-            {
-                displayAllPlocs();
-            } 
-            else 
-            {
-                searchForParkingLocation($searchLocationName);
-            }
-        } 
-        else 
-        {
-            displayAllPlocs();
-        }
-        echo '</div></div>';
+        
+                </div>
+            </div>
+        ';
     } 
     else 
     {
@@ -109,9 +67,13 @@ function displayAllUsers()
 
         if ($users) 
         {
-            echo '<div class="abilitybox"><div class="abilities" >All users</div>';
-            echo '<table border="1">';
-            echo '<tr><th>ID</th><th>Name</th><th>Role</th><th>Surname</th><th>Email</th><th>Phone</th></tr>';
+            echo '
+                <div class="abilitybox">
+                    <div class="abilities" >
+                        All users
+                    </div>
+                    <table border="1">
+                        <tr><th>ID</th><th>Name</th><th>Role</th><th>Surname</th><th>Email</th><th>Phone</th></tr>';
             
             foreach ($users as $user) 
             {
@@ -125,7 +87,10 @@ function displayAllUsers()
                 echo '</tr>';
             }
             
-            echo '</table></div>';
+            echo '
+                    </table>
+                </div>
+            ';
         } 
         else 
         {
@@ -181,46 +146,6 @@ function searchForUser($searchUserName)
     }
 }
 
-function insertPloc()
-{
-    echo '
-            <div class="abilitybox">
-                <div class="abilities">
-                    Add Parking Location
-                </div>
-                <form class="plocform" method="post" action="/insertparkingloc">
-                <div class="form-row">
-                    <label for="locName">Location Name:</label>
-                    <input type="text" id="locName" name="locName" required>
-                </div>
-
-                <div class="form-row">
-                    <label for="locDescription">Description:</label>
-                    <input type="text" id="locDescription" name="locDescription">
-                </div>
-
-                <div class="form-row">
-                    <label for="locCapacity">Capacity:</label>
-                    <input type="number" id="locCapacity" name="locCapacity" required>
-                </div>
-
-                <div class="form-row">
-                    <label for="locCostPerHour">Cost Per Hour:</label>
-                    <input type="text" id="locCostPerHour" name="locCostPerHour">
-                </div>
-
-                <div class="form-row">
-                    <label for="locCostPerHourLateCheckOut">Cost Per Hour Late Check Out:</label>
-                    <input type="text" id="locCostPerHourLateCheckOut" name="locCostPerHourLateCheckOut">
-                </div>
-
-                    <button class="nicebtn" type="submit">Add Parking Location</button>
-                </form>
-
-            </div>
-        ';
-}
-
 function displayAllPlocs()
 {
     global $servername, $username, $password, $dbname;
@@ -264,48 +189,8 @@ function displayAllPlocs()
     }
 }
 
-function searchForParkingLocation($searchLocationName)
-{
-    global $servername, $username, $password, $dbname;
 
-    try 
-    {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        // SQL statement to search for a specific parking location
-        $sql = "SELECT * FROM parkinglocs WHERE Location = :searchLocationName";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':searchLocationName', $searchLocationName);
-        $stmt->execute();
-
-        $location = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($location) 
-        {
-            echo '<div class="abilitybox"><div class="abilities">'.$location['Location'].'</div>';
-            echo '<table border="1">';
-            echo '<tr><th>ID</th><th>Location</th><th>Description</th><th>Capacity</th><th>Cost Per Hour</th><th>Cost Per Hour Late Check Out</th></tr>';
-            echo '<tr>';
-            echo '<td>' . $location['ParkingID'] . '</td>';
-            echo '<td>' . $location['Location'] . '</td>';
-            echo '<td>' . $location['Description'] . '</td>';
-            echo '<td>' . $location['Capacity'] . '</td>';
-            echo '<td>' . $location['CostPerHour'] . '</td>';
-            echo '<td>' . $location['CostPerHourLateCheckOut'] . '</td>';
-            echo '</tr>';
-            echo '</table></div>';
-        } 
-        else 
-        {
-            echo '<p>No parking location found with the name ' . $searchLocationName . '.</p>';
-        }
-    } 
-    catch (PDOException $e) 
-    {
-        echo "Connection failed: " . $e->getMessage();
-    }
-}
 
 function loginComponent()
 {
@@ -460,6 +345,89 @@ switch ($request) {
         break;
     }
 
+    case '/users':
+    {
+        require __DIR__ . $viewDir . 'mainpage.php';
+        headerComponent();
+        // Get the name of the currently logged-in user
+        $currentUserName = $_SESSION['user']['name'];
+        
+        echo '
+            <div class="canvas">
+                <div class="mainpagefn">
+                    <div class="title">
+                        Welcome, ' . $currentUserName . '!
+                    </div>
+                    <div class="adminpage">
+                        <a class="abilities" id="adminone" href="/users">Users</a>
+                        <a class="abilities" href="/plocs">Parking locations</a>
+                    </div>
+        ';
+        // Search user form
+        echo '
+                    <div class="searchcon">
+                        <form method="post" action="/users">
+                            <label for="searchUser">Search for user:</label>
+                            <div>
+                                <input type="text" id="searchUser" name="searchUser">
+                                <button class="nicebtn" type="submit">Go</button>
+                            </div>
+                        </form>
+                    </div>
+            ';
+        // Display search results or all users if form not submitted
+        if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['searchUser'])) 
+        {
+            $searchUserName = strtolower(htmlspecialchars($_POST['searchUser']));
+            // If search input is empty, display all users
+            if (empty($searchUserName)) 
+            {
+                displayAllUsers();
+            } 
+            else 
+            {
+                searchForUser($searchUserName);
+            }
+        } 
+        else 
+        {
+            displayAllUsers();
+        }
+        echo '
+                </div>
+            </div>
+        ';
+        btmComponent();
+        break;
+    }
+
+    case '/newploc': //no validation
+    {
+        // Check if the user is logged in
+        if (isset($_SESSION['user']))
+        {
+            // Get the name of the currently logged-in user
+            $currentUserName = $_SESSION['user']['name'];
+            echo '
+                    <div class="canvas">
+                        <div class="mainpagefn">
+                            <div class="title">Welcome, ' . $currentUserName . '!</div>
+                            ';
+                            displayAllPlocs();
+            echo '
+                        </div>
+                    </div>            
+            ';
+        }
+        else 
+        {
+            // Redirect to /login if not logged in
+            header("Location: /login");
+            exit;
+        }
+        break;
+    }
+
     case '/insertparkingloc':
     {
         // Create a connection to the database
@@ -492,7 +460,7 @@ switch ($request) {
                 $stmt->execute();
 
                 // Redirect back to admin component or any desired destination
-                header('Location: /');
+                header('Location: /newploc');
             }
         } 
         catch (PDOException $e) 

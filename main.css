@@ -246,3 +246,13 @@ body
 {
   width: 100%;
 }
+
+.adminpage
+{
+  display: flex;
+}
+
+#adminone
+{
+  background-color: tan;
+}
