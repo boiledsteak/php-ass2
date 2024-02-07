@@ -1528,10 +1528,12 @@ switch ($request) {
                             </div>
                 ';
             // Check if the total payment is set in the session
-            if (isset($_SESSION['totalPayment'])) {
+            if (isset($_SESSION['totalPayment'])) 
+            {
                 // Retrieve total payment from session
                 $totalPayment = $_SESSION['totalPayment'];
                 $totalHours = $_SESSION['allhours'];
+                $lateHours = $_SESSION['latehours'];
 
                 // Display payment information
                 echo '
@@ -1541,7 +1543,8 @@ switch ($request) {
                                 Payment Details
                             </div>
                             <div class="payment-details">
-                                <p>Total Hours: ' . $totalHours . '</p>
+                                <p>On time Hours: ' . $totalHours . '</p>
+                                <p>Late Hours: ' . $lateHours . '</p>
                                 <p>Total Fee: $' . number_format($totalPayment, 2) . '</p>
                             </div>
                         </div>
@@ -1645,11 +1648,14 @@ switch ($request) {
         
                         // Add late fee to total payment
                         $totalPayment += $lateFee;
+                        
+                        
         
                         // Store necessary data in session
                         $_SESSION['totalPayment'] = number_format($totalPayment, 2); // Truncate total payment to 2 decimal places
                         $_SESSION['recordID'] = $recordID;
                         $_SESSION['allhours'] = $totalHours;
+                        $_SESSION['latehours'] = $lateHours;
                         $_SESSION['lateFee'] = number_format($lateFee, 2); // Truncate late fee to 2 decimal places
         
                         // Update the capacity of the corresponding parking location
@@ -1802,6 +1808,8 @@ switch ($request) {
         {
             // Unset the session variable
             unset($_SESSION['user']);
+            unset($_SESSION['totalPayment']);
+
         }
         
         // Redirect to the home page or any desired destination
