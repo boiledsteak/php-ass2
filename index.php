@@ -1384,8 +1384,74 @@ switch ($request) {
                                 <a class="abilities"  href="/payment">Check out</a>
                             </div>
                 ';
+            // Form to prompt for check-in and checkout time
+            echo '
+                <div class="checkform">
+                    <form class="checkin-form" method="post" action="/checkin">
+                        <div>
+                            <label for="parkingID">Parking ID:</label>
+                            <input type="text" id="parkingID" name="parkingID" required>
+                        </div>
+                        
+                            <input type="hidden" id="userID" name="userID" value="'. $_SESSION['user']->getId() .'">
+                        
+                        <div>
+                            No of hours:
+                            <input type="text">
+                        </div>
+                        <div>
+                            <label for="checkoutTime">Checkout Time:</label>
+                            <input type="datetime-local" id="checkoutTime" name="checkoutTime" required>
+                        </div>
+                        <button class="nicebtn" type="submit">Check In</button>
+                    </form>
+                </div>
+            ';
+            // Check if the user is already checked in
+            if (isset($_SESSION['checkoutTime'])) 
+            {
+                // Calculate the number of hours between checkout time and current time
+                $checkoutTime = $_SESSION['checkoutTime'];
+                $currentTimestamp = time();
+                // Calculate the number of hours difference
+                $hoursDifference = ceil((strtotime($checkoutTime) - $currentTimestamp) / 3600);
+
                 
-                echo '
+                // Retrieve the parking ID from the session
+                $parkingID = $_SESSION['parkingID'];
+
+                try
+                {
+                    // Create a connection to the database
+                    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+                    // Set the PDO error mode to exception
+                    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                    
+                    // Retrieve the cost per hour and cost per hour for late checkout from the database
+                    $sql = "SELECT CostPerHour, CostPerHourLateCheckOut FROM parkinglocs WHERE ParkingID = :parkingID";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->bindParam(':parkingID', $parkingID);
+                    $stmt->execute();
+                    $parkingDetails = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    echo '
+                        <div class="checkin-details">
+                            <p>Number of hours untill checkout: ' . $hoursDifference . '</p>
+                            <p>Cost per hour: ' . $parkingDetails['CostPerHour'] . '</p>
+                            <p>Cost per hour for late checkout: ' . $parkingDetails['CostPerHourLateCheckOut'] . '</p>
+                        </div>
+                    ';
+                }
+                catch (PDOException $e) 
+                {
+                    // Handle database connection error
+                    echo "Connection failed: " . $e->getMessage();
+                }
+            }
+
+
+                
+            echo '
                         </div>
                     </div>            
             ';
@@ -1490,9 +1556,18 @@ switch ($request) {
                 $updateStmt = $conn->prepare($updateSql);
                 $updateStmt->bindParam(':parkingID', $parkingID);
                 $updateStmt->execute();
-    
-                // Redirect back to /check or any desired destination
-                header('Location: /check');
+                
+                $_SESSION['checkoutTime'] = $checkoutTime;
+                $_SESSION['parkingID'] = $parkingID;
+                // Redirect based on user role
+                if ($_SESSION['user']->getRole()=="admin") 
+                {
+                    header('Location: /check');
+                } 
+                else 
+                {
+                    header('Location: /usercheck');
+                }
             }
         } catch (PDOException $e) {
             // Handle database connection error
@@ -1663,7 +1738,8 @@ switch ($request) {
                         $updateStmt = $conn->prepare($updateSql);
                         $updateStmt->bindParam(':parkingID', $result['ParkingID']);
                         $updateStmt->execute();
-        
+                        
+                        unset($_SESSION['checkoutTime']);
                         // Redirect to payment page
                         header('Location: /payment');
                         exit;
@@ -1683,10 +1759,7 @@ switch ($request) {
             }
             
             break;
-        }
-        
-    
-    
+        }  
     
         
     case '/css':
@@ -1809,7 +1882,7 @@ switch ($request) {
             // Unset the session variable
             unset($_SESSION['user']);
             unset($_SESSION['totalPayment']);
-
+            unset($_SESSION['checkoutTime']);
         }
         
         // Redirect to the home page or any desired destination
