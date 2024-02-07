@@ -7,7 +7,7 @@
 
 <?php
 session_start();
-
+date_default_timezone_set("Asia/Singapore");
 $request = strtolower($_SERVER['REQUEST_URI']);
 $viewDir = '/pages/';
 $musicDir = '/pics/';
@@ -705,7 +705,7 @@ function activeparkingsbyname($searchName)
                 echo '<td>' . $location['UserName'] . '</td>';
                 echo '<td>' . $location['CheckInTime'] . '</td>';
                 echo '<td>' . $location['CheckOutTime'] . '</td>';
-                echo '<td><form method="post" action="/checkout"><input type="hidden" name="recordID" value="' . $location['RecordID'] . '"><button class="nicebtn" type="submit">Checkout</button></form></td>';
+                echo '<td><form method="post" action="/usercheckout"><input type="hidden" name="recordID" value="' . $location['RecordID'] . '"><button class="nicebtn" type="submit">Checkout</button></form></td>';
                 echo '</tr>';
             }
             
@@ -1425,39 +1425,39 @@ switch ($request) {
             break;
         }
 
-        case '/current':
-            {
-                require __DIR__ . $viewDir . 'mainpage.php';
-                headerComponent();
-                // Get the name of the currently logged-in user
-                $currentUserName = $_SESSION['user']->getName();
-                echo '
-                    <div class="canvas">
-                        <div class="mainpagefn">
-                            <div class="title">
-                                Welcome, ' . $currentUserName . '!
-                            </div>
-                            <div class="adminpage">
-                                <a class="abilities" href="/userploc">Parking locations</a>
-                                <a class="abilities" id="adminone" href="/usercheck">Check in/out</a>
-                            </div>
-                ';
-                echo '
-                                <div class="adminpage">
-                                    <a class="abilities"  href="/usercheck">Check in</a>
-                                    <a class="abilities"  href="/history">History</a>
-                                    <a class="abilities" id="adminone" href="/current">Current parkings</a>
-                                    <a class="abilities"  href="/payment">Check out</a>
-                                </div>
-                    ';
-
-                    activeparkingsbyname($currentUserName);
-                    echo '
+    case '/current':
+    {
+        require __DIR__ . $viewDir . 'mainpage.php';
+        headerComponent();
+        // Get the name of the currently logged-in user
+        $currentUserName = $_SESSION['user']->getName();
+        echo '
+            <div class="canvas">
+                <div class="mainpagefn">
+                    <div class="title">
+                        Welcome, ' . $currentUserName . '!
+                    </div>
+                    <div class="adminpage">
+                        <a class="abilities" href="/userploc">Parking locations</a>
+                        <a class="abilities" id="adminone" href="/usercheck">Check in/out</a>
+                    </div>
+        ';
+        echo '
+                        <div class="adminpage">
+                            <a class="abilities"  href="/usercheck">Check in</a>
+                            <a class="abilities"  href="/history">History</a>
+                            <a class="abilities" id="adminone" href="/current">Current parkings</a>
+                            <a class="abilities"  href="/payment">Check out</a>
                         </div>
-                    </div>            
             ';
-                break;
-            }
+
+            activeparkingsbyname($currentUserName);
+            echo '
+                </div>
+            </div>            
+    ';
+        break;
+    }
         
 
     case '/checkin':
@@ -1527,11 +1527,31 @@ switch ($request) {
                                 <a class="abilities" id="adminone" href="/payment">Check out</a>
                             </div>
                 ';
+            // Check if the total payment is set in the session
+            if (isset($_SESSION['totalPayment'])) {
+                // Retrieve total payment from session
+                $totalPayment = $_SESSION['totalPayment'];
+                $totalHours = $_SESSION['allhours'];
 
-                
+                // Display payment information
                 echo '
-                    </div>
-                </div>            
+                    <div class="canvas">
+                        <div class="mainpagefn">
+                            <div class="title">
+                                Payment Details
+                            </div>
+                            <div class="payment-details">
+                                <p>Total Hours: ' . $totalHours . '</p>
+                                <p>Total Fee: $' . number_format($totalPayment, 2) . '</p>
+                            </div>
+                        </div>
+                    </div>';
+            }
+        
+                
+            echo '
+                </div>
+            </div>            
             ';
         break;
     }
@@ -1579,7 +1599,89 @@ switch ($request) {
         break;
     }
                 
+    case '/usercheckout':
+        {
+            // Check if the user is logged in
+            if (isset($_SESSION['user'])) 
+            {
+                // Create a connection to the database
+                try 
+                {
+                    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+                    // Set the PDO error mode to exception
+                    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+                    // Check if the form is submitted
+                    if ($_SERVER["REQUEST_METHOD"] == "POST") 
+                    {
+                        // Get data from the form
+                        $recordID = $_POST['recordID'];
+            
+                        // Prepare the SQL statement to update the RealCheckOutTime column
+                        $updateSql = "UPDATE parkingrecords SET RealCheckOutTime = CURRENT_TIMESTAMP WHERE RecordID = :recordID";
+                        $stmt = $conn->prepare($updateSql);
+                        $stmt->bindParam(':recordID', $recordID);
+                        $stmt->execute();
+            
+                        // Retrieve the parking ID for the corresponding record
+                        $sql = "SELECT CheckInTime, CheckOutTime, CostPerHour, CostPerHourLateCheckOut FROM parkingrecords INNER JOIN parkinglocs ON parkingrecords.ParkingID = parkinglocs.ParkingID WHERE RecordID = :recordID";
+                        $stmt = $conn->prepare($sql);
+                        $stmt->bindParam(':recordID', $recordID);
+                        $stmt->execute();
+                        $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
+                        // Calculate the total hours
+                        $checkInTime = strtotime($result['CheckInTime']);
+                        $checkOutTime = strtotime($result['CheckOutTime']);
+                        $totalHours = ceil(($checkOutTime - $checkInTime) / 3600); // Round up to the nearest hour
+        
+                        // Calculate the total payment
+                        $totalPayment = $totalHours * $result['CostPerHour'];
+        
+                        // Calculate the late fee
+                        $realCheckOutTime = time(); // Assuming the current time is the checkout time
+                        $lateHours = max(0, ceil(($realCheckOutTime - $checkOutTime) / 3600)); // Round up to the nearest hour
+                        $lateFee = $lateHours * $result['CostPerHourLateCheckOut'];
+        
+                        // Add late fee to total payment
+                        $totalPayment += $lateFee;
+        
+                        // Store necessary data in session
+                        $_SESSION['totalPayment'] = number_format($totalPayment, 2); // Truncate total payment to 2 decimal places
+                        $_SESSION['recordID'] = $recordID;
+                        $_SESSION['allhours'] = $totalHours;
+                        $_SESSION['lateFee'] = number_format($lateFee, 2); // Truncate late fee to 2 decimal places
+        
+                        // Update the capacity of the corresponding parking location
+                        $updateSql = "UPDATE parkinglocs SET Capacity = Capacity + 1 WHERE ParkingID = :parkingID";
+                        $updateStmt = $conn->prepare($updateSql);
+                        $updateStmt->bindParam(':parkingID', $result['ParkingID']);
+                        $updateStmt->execute();
+        
+                        // Redirect to payment page
+                        header('Location: /payment');
+                        exit;
+                    }
+                } 
+                catch (PDOException $e) 
+                {
+                    // Handle database connection error
+                    echo "Connection failed: " . $e->getMessage();
+                }
+            }
+            else 
+            {
+                // Redirect to login if not logged in
+                header("Location: /login");
+                exit;
+            }
+            
+            break;
+        }
+        
+    
+    
+    
         
     case '/css':
     {
