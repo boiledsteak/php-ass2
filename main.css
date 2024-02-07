@@ -295,3 +295,16 @@ body
 {
   width: 100%;
 }
+
+/* others */
+
+.notif
+{
+  border: 10px solid mediumslateblue;
+  padding: 50px;
+  margin: 30px;
+  margin-bottom: 50px;
+  border-radius: 15px;
+  
+}
+

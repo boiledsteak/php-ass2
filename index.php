@@ -1435,7 +1435,8 @@ switch ($request) {
                     $parkingDetails = $stmt->fetch(PDO::FETCH_ASSOC);
 
                     echo '
-                        <div class="checkin-details">
+                        <div class="notif">
+                            <p>Checkout time: ' . date("d F Y H:i", strtotime($checkoutTime)) . '</p>
                             <p>Number of hours untill checkout: ' . $hoursDifference . '</p>
                             <p>Cost per hour: ' . $parkingDetails['CostPerHour'] . '</p>
                             <p>Cost per hour for late checkout: ' . $parkingDetails['CostPerHourLateCheckOut'] . '</p>
@@ -1612,18 +1613,14 @@ switch ($request) {
 
                 // Display payment information
                 echo '
-                    <div class="canvas">
-                        <div class="mainpagefn">
-                            <div class="title">
+                    
+                            <div class="notif">
                                 Payment Details
-                            </div>
-                            <div class="payment-details">
                                 <p>On time Hours: ' . $totalHours . '</p>
                                 <p>Late Hours: ' . $lateHours . '</p>
                                 <p>Total Fee: $' . number_format($totalPayment, 2) . '</p>
                             </div>
-                        </div>
-                    </div>';
+                    ';
             }
         
                 
