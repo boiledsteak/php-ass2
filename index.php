@@ -1,16 +1,13 @@
 <!-- due 19 feb -->
 <?php
 require_once './components/components.php';
+require_once './db/db.php';
 session_start();
 date_default_timezone_set("Asia/Singapore");
 $request = strtolower($_SERVER['REQUEST_URI']);
 $viewDir = '/pages/';
 $musicDir = '/pics/';
 
-$servername = "localhost";  
-$username = "root";      
-$password = "";      
-$dbname = "php-ass2";
 
 class User 
 {
@@ -61,13 +58,9 @@ class User
 
 function displayAllUsers()
 {
-    global $servername, $username, $password, $dbname;
-
     try 
     {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        global $conn;
         $stmt = $conn->query("SELECT * FROM usertable");
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -111,13 +104,9 @@ function displayAllUsers()
 
 function searchForUser($searchTerm)
 {
-    global $servername, $username, $password, $dbname;
-
     try 
     {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        global $conn;
         // SQL statement to search for a user by name or ID
         $sql = "SELECT * FROM usertable WHERE name LIKE :searchTerm 
                 OR id LIKE :searchTerm";
@@ -158,17 +147,11 @@ function searchForUser($searchTerm)
     }
 }
 
-
-
 function displayAllPlocs()
 {
-    global $servername, $username, $password, $dbname;
-
     try 
     {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        global $conn;
         $stmt = $conn->query("SELECT * FROM parkinglocs");
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -203,82 +186,44 @@ function displayAllPlocs()
     }
 }
 
-function printinsertploc()
-{
-    echo '
-            <div class="abilitybox">
-                <div class="abilities">
-                    Add Parking Location
-                </div>
-                <form class="plocform" method="post" action="/insertparkingloc">
-                <div class="form-row">
-                    <label for="locName">Location Name:</label>
-                    <input type="text" id="locName" name="locName" required>
-                </div>
-
-                <div class="form-row">
-                    <label for="locDescription">Description:</label>
-                    <input type="text" id="locDescription" name="locDescription">
-                </div>
-
-                <div class="form-row">
-                    <label for="locCapacity">Capacity:</label>
-                    <input type="number" id="locCapacity" name="locCapacity" required>
-                </div>
-
-                <div class="form-row">
-                    <label for="locCostPerHour">Cost Per Hour:</label>
-                    <input type="text" id="locCostPerHour" name="locCostPerHour">
-                </div>
-
-                <div class="form-row">
-                    <label for="locCostPerHourLateCheckOut">Cost Per Hour Late Check Out:</label>
-                    <input type="text" id="locCostPerHourLateCheckOut" name="locCostPerHourLateCheckOut">
-                </div>
-
-                    <button class="nicebtn" type="submit">Add Parking Location</button>
-                </form>
-
-            </div>
-        ';
-}
-
 function searchploc($searchLocationName)
 {
-    global $servername, $username, $password, $dbname;
-
     try 
     {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        global $conn;
         // SQL statement to search for a specific parking location
-        $sql = "SELECT * FROM parkinglocs WHERE Location = :searchLocationName
+        $sql = "SELECT * FROM parkinglocs WHERE Location LIKE :searchLocationName
+                OR Description LIKE :searchLocationName
                 OR ParkingID LIKE :searchLocationName";
         $stmt = $conn->prepare($sql);
-        $stmt->bindParam(':searchLocationName', $searchLocationName);
+        $stmt->bindValue(':searchLocationName', '%' . $searchLocationName . '%');
         $stmt->execute();
 
-        $location = $stmt->fetch(PDO::FETCH_ASSOC);
+        $locations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if ($location) 
+        if ($locations) 
         {
-            echo '<div class="abilitybox"><div class="abilities">'.$location['Location'].'</div>';
+            echo '<div class="abilitybox"><div class="abilities">Available Parking Locations</div>';
             echo '<table border="1">';
             echo '<tr><th>ID</th><th>Location</th><th>Description</th><th>Capacity</th><th>Cost Per Hour</th><th>Cost Per Hour Late Check Out</th></tr>';
-            echo '<tr>';
-            echo '<td>' . $location['ParkingID'] . '</td>';
-            echo '<td>' . $location['Location'] . '</td>';
-            echo '<td>' . $location['Description'] . '</td>';
-            echo '<td>' . $location['Capacity'] . '</td>';
-            echo '<td>' . $location['CostPerHour'] . '</td>';
-            echo '<td>' . $location['CostPerHourLateCheckOut'] . '</td>';
-            echo '</tr>';
+            
+            foreach ($locations as $location) 
+            {
+                echo '<tr>';
+                echo '<td>' . $location['ParkingID'] . '</td>';
+                echo '<td>' . $location['Location'] . '</td>';
+                echo '<td>' . $location['Description'] . '</td>';
+                echo '<td>' . $location['Capacity'] . '</td>';
+                echo '<td>' . $location['CostPerHour'] . '</td>';
+                echo '<td>' . $location['CostPerHourLateCheckOut'] . '</td>';
+                echo '</tr>';
+            }
+            
             echo '</table></div>';
         } 
         else 
         {
-            echo '<p>No parking location found with the name ' . $searchLocationName . '.</p>';
+            echo '<p>No available parking locations found matching the search term "' . $searchTerm . '".</p>';
         }
     } 
     catch (PDOException $e) 
@@ -289,12 +234,9 @@ function searchploc($searchLocationName)
 
 function displayPlocsFull()
 {
-    global $servername, $username, $password, $dbname;
-
-    try {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+    try 
+    {
+        global $conn;   
         $stmt = $conn->prepare("SELECT * FROM parkinglocs WHERE Capacity = 0");
         $stmt->execute();
         $plocs = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -319,19 +261,17 @@ function displayPlocsFull()
         } else {
             echo '<p>No full parking locations found.</p>';
         }
-    } catch (PDOException $e) {
+    } 
+    catch (PDOException $e) 
+    {
         echo "Connection failed: " . $e->getMessage();
     }
 }
 
 function displayPlocsNotFull()
 {
-    global $servername, $username, $password, $dbname;
-
     try {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        global $conn;
         $stmt = $conn->prepare("SELECT * FROM parkinglocs WHERE Capacity > 0");
         $stmt->execute();
         $plocs = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -363,13 +303,9 @@ function displayPlocsNotFull()
 
 function plocnotfullsearch($searchTerm)
 {
-    global $servername, $username, $password, $dbname;
-
     try 
     {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        global $conn;
         // SQL statement to search for parking locations with capacity > 0
         $sql = "SELECT * FROM parkinglocs WHERE ParkingID LIKE :searchTerm 
                 OR Location LIKE :searchTerm 
@@ -413,16 +349,11 @@ function plocnotfullsearch($searchTerm)
     }
 }
 
-
 function plocfullsearch($searchLocation)
 {
-    global $servername, $username, $password, $dbname;
-
     try 
     {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        global $conn;
         // SQL statement to search for full parking locations by name
         $sql = "SELECT * FROM parkinglocs WHERE Location LIKE :searchLocation 
                 OR ParkingID LIKE :searchLocation
@@ -467,12 +398,9 @@ function plocfullsearch($searchLocation)
 
 function printCheckIn()
 {
-    global $servername, $username, $password, $dbname;
-
-    try {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+    try 
+    {
+        global $conn;
         $stmt = $conn->query("SELECT parkingrecords.RecordID, parkinglocs.Location, usertable.name AS UserName, parkingrecords.CheckInTime, parkingrecords.CheckOutTime
                               FROM parkingrecords
                               LEFT JOIN parkinglocs ON parkingrecords.ParkingID = parkinglocs.ParkingID
@@ -512,13 +440,9 @@ function printCheckIn()
 
 function searchCheckedInLocation($searchName)
 {
-    global $servername, $username, $password, $dbname;
-
     try 
     {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        global $conn;
         // SQL statement to search for a specific checked-in location by name
         $sql = "SELECT parkingrecords.RecordID, parkinglocs.Location, parkinglocs.Description, usertable.name AS UserName, parkingrecords.CheckInTime, parkingrecords.CheckOutTime
                 FROM parkingrecords 
@@ -572,13 +496,9 @@ function searchCheckedInLocation($searchName)
 
 function searchCheckedInLocationByName($searchName)
 {
-    global $servername, $username, $password, $dbname;
-
     try 
     {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        global $conn;
         // SQL statement to search for a specific checked-in location by name
         $sql = "SELECT parkingrecords.RecordID, parkinglocs.Location, parkinglocs.Description, usertable.name AS UserName, parkingrecords.CheckInTime, parkingrecords.CheckOutTime, parkingrecords.RealCheckOutTime
                 FROM parkingrecords 
@@ -629,13 +549,9 @@ function searchCheckedInLocationByName($searchName)
 
 function activeparkingsbyname($searchName)
 {
-    global $servername, $username, $password, $dbname;
-
     try 
     {
-        $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+        global $conn;
         // SQL statement to search for a specific checked-in location by name
         $sql = "SELECT parkingrecords.RecordID, parkinglocs.Location, parkinglocs.Description, usertable.name AS UserName, parkingrecords.CheckInTime, parkingrecords.CheckOutTime
                 FROM parkingrecords 
@@ -685,8 +601,11 @@ function activeparkingsbyname($searchName)
 }
 
 
-function loginUser($username, $conn) {
-    try {
+function loginUser($username) 
+{
+    try 
+    {
+        global $conn;
         // SQL statement to check if the username exists
         $sql = "SELECT * FROM usertable WHERE name = :username";
         $stmt = $conn->prepare($sql);
@@ -1675,42 +1594,29 @@ switch ($request) {
 
     case '/loginuser':
     {
-        // Create a connection to the database
-        try 
+        // Check if the form is submitted
+        if ($_SERVER["REQUEST_METHOD"] == "POST") 
         {
-            $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-            // Set the PDO error mode to exception
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-            // Check if the form is submitted
-            if ($_SERVER["REQUEST_METHOD"] == "POST") 
+            // Get data from the form
+            $username = strtolower(htmlspecialchars($_POST['fname']));
+
+            // Attempt to login the user
+            $user = loginUser($username);
+
+            if ($user) 
             {
-                // Get data from the form
-                $username = strtolower(htmlspecialchars($_POST['fname']));
-    
-                // Attempt to login the user
-                $user = loginUser($username, $conn);
-    
-                if ($user) 
-                {
-                    // Store user object in the session
-                    $_SESSION['user'] = $user;
-                    // Redirect to / 
-                    header("Location: /");
-                    exit;
-                } 
-                else 
-                {
-                    // Redirect back to /login if the username doesn't exist
-                    header("Location: /login");
-                    exit;
-                }
+                // Store user object in the session
+                $_SESSION['user'] = $user;
+                // Redirect to / 
+                header("Location: /");
+                exit;
+            } 
+            else 
+            {
+                // Redirect back to /login if the username doesn't exist
+                header("Location: /login");
+                exit;
             }
-        } 
-        catch (PDOException $e) 
-        {
-            // Handle database connection error
-            echo "Connection failed: " . $e->getMessage();
         }
         break;
     }

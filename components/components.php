@@ -170,4 +170,44 @@ function btmComponent()
     ';
 }
 
+function printinsertploc()
+{
+    echo '
+            <div class="abilitybox">
+                <div class="abilities">
+                    Add Parking Location
+                </div>
+                <form class="plocform" method="post" action="/insertparkingloc">
+                <div class="form-row">
+                    <label for="locName">Location Name:</label>
+                    <input type="text" id="locName" name="locName" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="locDescription">Description:</label>
+                    <input type="text" id="locDescription" name="locDescription">
+                </div>
+
+                <div class="form-row">
+                    <label for="locCapacity">Capacity:</label>
+                    <input type="number" id="locCapacity" name="locCapacity" required>
+                </div>
+
+                <div class="form-row">
+                    <label for="locCostPerHour">Cost Per Hour:</label>
+                    <input type="text" id="locCostPerHour" name="locCostPerHour">
+                </div>
+
+                <div class="form-row">
+                    <label for="locCostPerHourLateCheckOut">Cost Per Hour Late Check Out:</label>
+                    <input type="text" id="locCostPerHourLateCheckOut" name="locCostPerHourLateCheckOut">
+                </div>
+
+                    <button class="nicebtn" type="submit">Add Parking Location</button>
+                </form>
+
+            </div>
+        ';
+}
+
 ?>
