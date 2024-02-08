@@ -55,7 +55,6 @@ class User
    
 }
 
-
 function displayAllUsers()
 {
     try 
@@ -223,7 +222,7 @@ function searchploc($searchLocationName)
         } 
         else 
         {
-            echo '<p>No available parking locations found matching the search term "' . $searchTerm . '".</p>';
+            echo '<p>No available parking locations found matching the search term "' . $searchLocationName . '".</p>';
         }
     } 
     catch (PDOException $e) 
@@ -600,7 +599,6 @@ function activeparkingsbyname($searchName)
     }
 }
 
-
 function loginUser($username) 
 {
     try 
@@ -629,9 +627,9 @@ function loginUser($username)
     }
 }
 
-
 // Router API
-switch ($request) {
+switch ($request) 
+{
 
     case '/':
     {
@@ -855,67 +853,67 @@ switch ($request) {
     }
 
     case '/plocfull':
+    {
+        // Check if the user is logged in
+        if (isset($_SESSION['user'])) 
         {
-            // Check if the user is logged in
-            if (isset($_SESSION['user'])) 
-            {
-                require __DIR__ . $viewDir . 'mainpage.php';
-                headerComponent();
-                // Get the name of the currently logged-in user
-                $currentUserName = $_SESSION['user']->getName();
-                echo '
-                    <div class="canvas">
-                        <div class="mainpagefn">
-                            <div class="title">
-                                Welcome, ' . $currentUserName . '!
-                            </div>
-                            <div class="adminpage">
-                                <a class="abilities" href="/users">Users</a>
-                                <a class="abilities" id="adminone" href="/ploc">Parking locations</a>
-                                <a class="abilities" href="/check">Check in/out</a>
-                            </div>';
-                echo '
-                            <div class="adminpage">
-                                <a class="abilities" href="/ploc">All parking locations</a>
-                                <a class="abilities" id="adminone" href="/plocfull">Full lots</a>
-                                <a class="abilities" href="/plocnotfull">Available lots</a>
-                            </div>
-                ';
-                // Search parking locations form
-                echo '
-                <div class="searchcon">
-                    <form method="post" action="/plocfull">
-                        <label for="searchploc">Search for Parking Location:</label>
-                        <div>
-                            <input type="text" id="searchploc" name="searchploc">
-                            <button class="nicebtn" type="submit">Go</button>
+            require __DIR__ . $viewDir . 'mainpage.php';
+            headerComponent();
+            // Get the name of the currently logged-in user
+            $currentUserName = $_SESSION['user']->getName();
+            echo '
+                <div class="canvas">
+                    <div class="mainpagefn">
+                        <div class="title">
+                            Welcome, ' . $currentUserName . '!
                         </div>
-                    </form>
-                </div>';
-                
-                // Check if search input is provided
-                if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['searchploc'])) 
-                {
-                    $searchLocation = strtolower(htmlspecialchars($_POST['searchploc']));
-                    // If search input is provided, call plocfullsearch
-                    plocfullsearch($searchLocation);
-                } 
-                else 
-                {
-                    // If search input is not provided, call displayPlocsFull
-                    displayPlocsFull();
-                }
-                
-                echo '</div></div>';
+                        <div class="adminpage">
+                            <a class="abilities" href="/users">Users</a>
+                            <a class="abilities" id="adminone" href="/ploc">Parking locations</a>
+                            <a class="abilities" href="/check">Check in/out</a>
+                        </div>';
+            echo '
+                        <div class="adminpage">
+                            <a class="abilities" href="/ploc">All parking locations</a>
+                            <a class="abilities" id="adminone" href="/plocfull">Full lots</a>
+                            <a class="abilities" href="/plocnotfull">Available lots</a>
+                        </div>
+            ';
+            // Search parking locations form
+            echo '
+            <div class="searchcon">
+                <form method="post" action="/plocfull">
+                    <label for="searchploc">Search for Parking Location:</label>
+                    <div>
+                        <input type="text" id="searchploc" name="searchploc">
+                        <button class="nicebtn" type="submit">Go</button>
+                    </div>
+                </form>
+            </div>';
+            
+            // Check if search input is provided
+            if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['searchploc'])) 
+            {
+                $searchLocation = strtolower(htmlspecialchars($_POST['searchploc']));
+                // If search input is provided, call plocfullsearch
+                plocfullsearch($searchLocation);
             } 
             else 
             {
-                // Redirect to /login if not logged in
-                header("Location: /login");
-                break;
+                // If search input is not provided, call displayPlocsFull
+                displayPlocsFull();
             }
+            
+            echo '</div></div>';
+        } 
+        else 
+        {
+            // Redirect to /login if not logged in
+            header("Location: /login");
             break;
         }
+        break;
+    }
     
 
     case '/plocnotfull':
@@ -995,9 +993,7 @@ switch ($request) {
         // Create a connection to the database
         try 
         {
-            $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-            // Set the PDO error mode to exception
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            global $conn;
 
             // Check if the form is submitted
             if ($_SERVER["REQUEST_METHOD"] == "POST") 
@@ -1521,7 +1517,6 @@ switch ($request) {
         break;
     }  
     
-        
     case '/css':
     {
         header('Content-Type: text/css');
@@ -1636,7 +1631,6 @@ switch ($request) {
         header("Location: /");
         exit;
     }
-        
         
     default:
     {
