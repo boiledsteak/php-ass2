@@ -1181,11 +1181,8 @@ switch ($request)
 
             try
             {
-                // Create a connection to the database
-                $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-                // Set the PDO error mode to exception
-                $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                
+                global $conn;
+                                
                 // Retrieve the cost per hour and cost per hour for late checkout from the database
                 $sql = "SELECT CostPerHour, CostPerHourLateCheckOut FROM parkinglocs WHERE ParkingID = :parkingID";
                 $stmt = $conn->prepare($sql);
@@ -1285,17 +1282,16 @@ switch ($request)
         break;
     }
         
-
     case '/checkin':
     {
         // Create a connection to the database
-        try {
-            $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-            // Set the PDO error mode to exception
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        try 
+        {
+            global $conn;
     
             // Check if the form is submitted
-            if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            if ($_SERVER["REQUEST_METHOD"] == "POST") 
+            {
                 // Get data from the form
                 $parkingID = $_POST['parkingID'];
                 $userID = $_POST['userID'];
@@ -1329,7 +1325,9 @@ switch ($request)
                     header('Location: /usercheck');
                 }
             }
-        } catch (PDOException $e) {
+        } 
+        catch (PDOException $e) 
+        {
             // Handle database connection error
             echo "Connection failed: " . $e->getMessage();
         }
@@ -1371,13 +1369,19 @@ switch ($request)
                 $lateHours = $_SESSION['latehours'];
 
                 // Display payment information
+                error_log("this is the total fee->". $totalPayment);
+                $totalPayment = str_replace(',', '', $totalPayment); // Remove the comma from the string
+                $totalPayment = (float) $totalPayment; // Convert the string to a float
+                $formatted_number = number_format($totalPayment, 2); // Format the number with two decimal places
+
+
                 echo '
                     
                             <div class="notif">
                                 Payment Details
                                 <p>On time Hours: ' . $totalHours . '</p>
                                 <p>Late Hours: ' . $lateHours . '</p>
-                                <p>Total Fee: $' . number_format($totalPayment, 2) . '</p>
+                                <p>Total Fee: $' . $formatted_number . '</p>
                             </div>
                     ';
             }
@@ -1393,10 +1397,9 @@ switch ($request)
     case '/checkout':
     {
         // Create a connection to the database
-        try {
-            $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-            // Set the PDO error mode to exception
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        try 
+        {
+            global $conn;
     
             // Check if the form is submitted
             if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -1425,7 +1428,9 @@ switch ($request)
                 // Redirect back to /check or any desired destination
                 header('Location: /check');
             }
-        } catch (PDOException $e) {
+        } 
+        catch (PDOException $e) 
+        {
             // Handle database connection error
             echo "Connection failed: " . $e->getMessage();
         }
@@ -1441,9 +1446,7 @@ switch ($request)
             // Create a connection to the database
             try 
             {
-                $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-                // Set the PDO error mode to exception
-                $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                global $conn;
         
                 // Check if the form is submitted
                 if ($_SERVER["REQUEST_METHOD"] == "POST") 
@@ -1538,9 +1541,7 @@ switch ($request)
         // Create a connection to the database
         try 
         {
-            $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-            // Set the PDO error mode to exception
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            global $conn;
 
             // Check if the form is submitted
             if ($_SERVER["REQUEST_METHOD"] == "POST") 
@@ -1571,7 +1572,6 @@ switch ($request)
         } 
         catch (PDOException $e) 
         {
-            // put into error_log when ready
             echo "Connection failed: " . $e->getMessage();
         }
 
